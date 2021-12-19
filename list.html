@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="UTF-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Document</title>
+	<style>
+		.item {
+			/* height: 40px; */
+			/* line-height: 40px; */
+			padding: 100px 20px;
+			border: 1px solid black;
+			text-align: center;
+		}
+
+	</style>
+</head>
+
+<body>
+	<script>
+		let currentId = ''
+
+		// 开始拖拽，设置拖拽数据
+		function onDragStart( event ) {
+			console.log( '开始拖动', event.target.id );
+			event.dataTransfer.setData( 'id', event.target.id )
+			currentId = event.target.id
+		}
+
+		// 允许拖拽到当前元素
+		function onDragOver( event ) {
+
+
+			// console.log('拖拽到当前元素的数据', data);
+			if ( currentId === 'item' ) {
+				console.log( '当前元素不允许来源元素拖放' );
+				return
+			}
+			event.preventDefault()
+		}
+
+		// 停止拖拽松开鼠标
+		function onDrop( event ) {
+			console.log( 'event', event )
+			event.preventDefault()
+			// const data = event.dataTransfer.getData('id')
+			// event.target.appendChild(document.getElementById(data))
+
+			console.log( '拖拽到元素的信息', event );
+			console.log( '拖拽到元素的信息height', event.target.offsetHeight );
+			console.log( '拖拽到元素的信息top', event.target.offsetTop );
+
+			//获取手指抬起时在文档中的位置
+			// e = e.originalEvent.changedTouches[0];
+			//计算偏移值，获取手指相对于元素的坐标
+			var pageX = event.pageX - event.target.offsetLeft,
+				pageY = event.pageY - event.target.offsetTop;
+			//px转百分比
+			pageX = pageX / event.target.clientWidth * 100;
+			pageY = pageY / event.target.clientHeight * 100;
+			console.log( 'pageX', pageX, 'pageY', pageY );
+
+			const data = event.dataTransfer.getData( 'id' )
+
+
+			console.log( 'event.target.parent', event.target.parentNode );
+			const parentNode = event.target.parentNode
+			const children = parentNode.getElementsByTagName( '*' )
+			const currentIndex = Array.from( children ).findIndex( ( item ) => item === event.target )
+			console.log( 'event.target', event.target );
+			console.log( 'id', data );
+
+			// 判断如果是自己不做任何操作
+			if ( document.getElementById( data ) === children[ currentIndex ] ) {
+				console.log('是自己，不做任何操作');
+				return
+			}
+
+
+			// 根据拖放时鼠标所在位置进行不同的操作
+			// 小于20%，在当前节点前插入
+			// 大于80%，在当前节点后插入
+			// 20%-80%，作为子节点插入当前节点
+			if ( pageY < 20 ) {
+				console.log( '小于20，在当前节点前插入' );
+				parentNode.insertBefore( document.getElementById( data ), children[ currentIndex ] )
+			} else if ( pageY > 80 ) {
+				console.log( '大于20，在当前节点后插入' );
+				parentNode.insertBefore( document.getElementById( data ), children[ currentIndex + 1 ] )
+			} else {
+				console.log( '20-80之间，直接插入当前节点' );
+				event.target.appendChild( document.getElementById( data ) )
+			}
+		}
+
+	</script>
+	<div>
+		<div class="item" id="item1" draggable="true" ondragstart="onDragStart(event)" ondragover="onDragOver(event)"
+			ondrop="onDrop(event)">item1</div>
+		<div id="item2" class="item" draggable="true" ondragstart="onDragStart(event)" ondragover="onDragOver(event)"
+			ondrop="onDrop(event)">item2</div>
+		<div id="item3" class="item" draggable="true" ondragstart="onDragStart(event)" ondragover="onDragOver(event)"
+			ondrop="onDrop(event)">item3</div>
+		<div class="item" draggable="true" id="item4" ondragstart="onDragStart(event)" ondragover="onDragOver(event)"
+			ondrop="onDrop(event)">item4</div>
+		<div id="item5" class="item" draggable="true" ondragstart="onDragStart(event)" ondragover="onDragOver(event)"
+			ondrop="onDrop(event)">item5</div>
+	</div>
+</body>
+
+</html>
