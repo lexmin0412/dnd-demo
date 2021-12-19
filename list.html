@@ -6,19 +6,11 @@
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<title>Document</title>
-	<style>
-		.item {
-			/* height: 40px; */
-			/* line-height: 40px; */
-			padding: 100px 20px;
-			border: 1px solid black;
-			text-align: center;
-		}
-
-	</style>
+	<link rel="stylesheet" href="./list.css">
 </head>
 
 <body>
+	<script src="./list.js"></script>
 	<script>
 		let currentId = ''
 
@@ -32,35 +24,78 @@
 		// 允许拖拽到当前元素
 		function onDragOver( event ) {
 
+			console.log('into dragover');
+
 
 			// console.log('拖拽到当前元素的数据', data);
-			if ( currentId === 'item' ) {
+			if ( currentId === 'item2' ) {
 				console.log( '当前元素不允许来源元素拖放' );
 				return
 			}
+			// 设置自定义样式
+			// 过滤当前元素
+			if ( event.target !== document.getElementById(currentId) ) {
+				const currentPosition = getCurrentCursorPositionInDomElement(event)
+				console.log('currentPosition', currentPosition);
+
+				// 判断元素能否被拖放到当前元素
+
+				if ( currentPosition === TOP ) {
+					// 判断元素是否可放到父元素中
+					removeDomClass(event.target, CLASS_FOCUS_BOTTOM_ABLE)
+					removeDomClass(event.target, CLASS_FOCUS_CENTER_ABLE)
+					addDomClass(event.target, CLASS_FOCUS_TOP_ABLE)
+					const name = event.target.getAttribute('data-name')
+					event.target.setAttribute('data-error', `组件item${currentId}不能放在${name}区域`)
+				} else if ( currentPosition === CENTER ) {
+					removeDomClass(event.target, CLASS_FOCUS_TOP_ABLE)
+					removeDomClass(event.target, CLASS_FOCUS_BOTTOM_ABLE)
+					addDomClass(event.target, CLASS_FOCUS_CENTER_ABLE)
+				} else {
+					removeDomClass(event.target, CLASS_FOCUS_TOP_ABLE)
+					removeDomClass(event.target, CLASS_FOCUS_CENTER_ABLE)
+					addDomClass(event.target, CLASS_FOCUS_BOTTOM_ABLE)
+				}
+			} else {
+				// 如果是当前元素显示禁用
+				addDomClass(event.target, CLASS_FOCUS_TOP_DISABLED)
+			}
+
+
 			event.preventDefault()
+		}
+
+		// 拖拽离开元素
+		function onDragLeave(event) {
+			removeDomClass(event.target, CLASS_FOCUS_TOP_ABLE)
+			removeDomClass(event.target, CLASS_FOCUS_CENTER_ABLE)
+			removeDomClass(event.target, CLASS_FOCUS_BOTTOM_ABLE)
+			removeDomClass(event.target, CLASS_FOCUS_TOP_DISABLED)
+			removeDomClass(event.target, CLASS_FOCUS_CENTER_DISABLED)
+			removeDomClass(event.target, CLASS_FOCUS_BOTTOM_DISABLED)
 		}
 
 		// 停止拖拽松开鼠标
 		function onDrop( event ) {
 			console.log( 'event', event )
 			event.preventDefault()
+
+			// 移除拖拽聚焦自定义样式
+			removeDomClass(event.target, CLASS_FOCUS_TOP_ABLE)
+			removeDomClass(event.target, CLASS_FOCUS_CENTER_ABLE)
+			removeDomClass(event.target, CLASS_FOCUS_BOTTOM_ABLE)
+			removeDomClass(event.target, CLASS_FOCUS_TOP_DISABLED)
+			removeDomClass(event.target, CLASS_FOCUS_CENTER_DISABLED)
+			removeDomClass(event.target, CLASS_FOCUS_BOTTOM_DISABLED)
+
+
 			// const data = event.dataTransfer.getData('id')
 			// event.target.appendChild(document.getElementById(data))
-
-			console.log( '拖拽到元素的信息', event );
-			console.log( '拖拽到元素的信息height', event.target.offsetHeight );
-			console.log( '拖拽到元素的信息top', event.target.offsetTop );
 
 			//获取手指抬起时在文档中的位置
 			// e = e.originalEvent.changedTouches[0];
 			//计算偏移值，获取手指相对于元素的坐标
-			var pageX = event.pageX - event.target.offsetLeft,
-				pageY = event.pageY - event.target.offsetTop;
-			//px转百分比
-			pageX = pageX / event.target.clientWidth * 100;
-			pageY = pageY / event.target.clientHeight * 100;
-			console.log( 'pageX', pageX, 'pageY', pageY );
+			const cursorPosition = getCurrentCursorPositionInDomElement(event)
 
 			const data = event.dataTransfer.getData( 'id' )
 
@@ -74,7 +109,7 @@
 
 			// 判断如果是自己不做任何操作
 			if ( document.getElementById( data ) === children[ currentIndex ] ) {
-				console.log('是自己，不做任何操作');
+				console.log( '是自己，不做任何操作' );
 				return
 			}
 
@@ -83,10 +118,10 @@
 			// 小于20%，在当前节点前插入
 			// 大于80%，在当前节点后插入
 			// 20%-80%，作为子节点插入当前节点
-			if ( pageY < 20 ) {
+			if ( cursorPosition  === TOP ) {
 				console.log( '小于20，在当前节点前插入' );
 				parentNode.insertBefore( document.getElementById( data ), children[ currentIndex ] )
-			} else if ( pageY > 80 ) {
+			} else if ( cursorPosition === BOTTOM ) {
 				console.log( '大于20，在当前节点后插入' );
 				parentNode.insertBefore( document.getElementById( data ), children[ currentIndex + 1 ] )
 			} else {
@@ -95,19 +130,27 @@
 			}
 		}
 
+
+		function renderElements() {
+			const container = document.getElementById( 'container' )
+			console.log( 'into renderElements' );
+			[ 1, 2, 1, 1, 2 ].forEach( ( item, index ) => {
+				const element = `<div class="item" data-name="item00${index}" data-error="" id="item${index}" draggable="true" ondragstart="onDragStart(event)" ondragleave="onDragLeave(event)" ondragover="onDragOver(event)"
+			ondrop="onDrop(event)">> item${index}
+				<div class="item" data-name="item00${index}-${index}" data-error="" id="item${index}-${index}" draggable="true" ondragstart="onDragStart(event)" ondragleave="onDragLeave(event)" ondragover="onDragOver(event)"
+			ondrop="onDrop(event)">> item${index}-${index}</div>
+
+			</div>`
+				console.log( 'element', element );
+				container.innerHTML = `${container.innerHTML}${element}`
+			} )
+		}
+		window.onload = function () {
+			renderElements()
+		}
+
 	</script>
-	<div>
-		<div class="item" id="item1" draggable="true" ondragstart="onDragStart(event)" ondragover="onDragOver(event)"
-			ondrop="onDrop(event)">item1</div>
-		<div id="item2" class="item" draggable="true" ondragstart="onDragStart(event)" ondragover="onDragOver(event)"
-			ondrop="onDrop(event)">item2</div>
-		<div id="item3" class="item" draggable="true" ondragstart="onDragStart(event)" ondragover="onDragOver(event)"
-			ondrop="onDrop(event)">item3</div>
-		<div class="item" draggable="true" id="item4" ondragstart="onDragStart(event)" ondragover="onDragOver(event)"
-			ondrop="onDrop(event)">item4</div>
-		<div id="item5" class="item" draggable="true" ondragstart="onDragStart(event)" ondragover="onDragOver(event)"
-			ondrop="onDrop(event)">item5</div>
-	</div>
+	<div id="container"></div>
 </body>
 
 </html>
